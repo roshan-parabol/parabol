@@ -1,1 +1,1 @@
-# parabol
+RethinkDB deployment and administration in GCP
