@@ -3,6 +3,15 @@ provider "google" {
   region  = var.region
 }
 
+// TODO: decide on disk type and size
+resource "google_compute_disk" "rethinkdb_storage" {
+  name  = "rethinkdb-storage"
+  type  = "pd-ssd" 
+  size  = 10
+  zone  = var.zone  
+}
+
+
 // VM Instance
 resource "google_compute_instance" "rethinkdb_instance" {
   name         = "rethinkdb-vm"
@@ -12,58 +21,20 @@ resource "google_compute_instance" "rethinkdb_instance" {
 
   boot_disk {
     initialize_params {
-      size = 10
+      image = "debian-cloud/debian-11"
+      size  = 20
     }
+  }
+
+  attached_disk {
+    source = google_compute_disk.rethinkdb_storage.self_link
+    mode   = "READ_WRITE"
   }
 
   network_interface {
     network = "default"
   }
 
-}
-
-// load balancer - set create_load_balancer to True to setup load balancer
-resource "google_compute_backend_service" "rethinkdb_backend_service" {
-  count                           = var.create_load_balancer ? 1 : 0
-  name                            = "rethinkdb-backend-service"
-  project                         = var.project_id
-  protocol                        = "TCP"
-  timeout_sec                     = 10
-  port_name                       = "rethinkdb"
-  enable_cdn                      = false
-  connection_draining_timeout_sec = 300
-
-  backend {
-    group = google_compute_instance.rethinkdb_instance.self_link
-  }
-}
-
-resource "google_compute_health_check" "rethinkdb_health_check" {
-  count              = var.create_load_balancer ? 1 : 0
-  name               = "rethinkdb-health-check"
-  check_interval_sec = 5
-  timeout_sec        = 5
-  tcp_health_check {
-    port = 8080
-  }
-}
-
-resource "google_compute_target_pool" "rethinkdb_target_pool" {
-  count         = var.create_load_balancer ? 1 : 0
-  name          = "rethinkdb-target-pool"
-  region        = var.region
-  project       = var.project_id
-  instances     = [google_compute_instance.rethinkdb_instance.self_link]
-  health_checks = [google_compute_health_check.rethinkdb_health_check[count.index].self_link]
-}
-
-resource "google_compute_forwarding_rule" "rethinkdb_forwarding_rule" {
-  count      = var.create_load_balancer ? 1 : 0
-  name       = "rethinkdb-forwarding-rule"
-  region     = var.region
-  project    = var.project_id
-  target     = google_compute_target_pool.rethinkdb_target_pool[count.index].self_link
-  port_range = "8080"
 }
 
 // storage bucket
@@ -76,12 +47,15 @@ resource "google_storage_bucket" "rethinkdb_backup_bucket" {
 
 resource "google_service_account" "rethinkdb_service_account" {
   account_id   = "rethinkdb-admin"
-  display_name = "RethinkDB Service Account"
+  display_name = "RethinkDB Storage Admin Service Account"
   project      = var.project_id
 }
 
-resource "google_project_iam_member" "rethinkdb_service_account_permissions" {
-  project = var.project_id
-  role    = "roles/storage.objectAdmin"
-  member  = "serviceAccount:${google_service_account.rethinkdb_service_account.email}"
+resource "google_storage_bucket_iam_binding" "rethinkdb_bucket_iam_binding" {
+  bucket = google_storage_bucket.rethinkdb_backup_bucket.name
+  role   = "roles/storage.objectAdmin"
+
+  members = [
+    "serviceAccount:${google_service_account.rethinkdb_service_account.email}",
+  ]
 }
