@@ -3,14 +3,23 @@ provider "google" {
   region  = var.region
 }
 
-// TODO: decide on disk type and size
 resource "google_compute_disk" "rethinkdb_storage" {
   name  = "rethinkdb-storage"
   type  = "pd-ssd" 
-  size  = 10
-  zone  = var.zone  
+  size  = var.disk_size
+  zone  = var.zone
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
+// Static IP Address
+resource "google_compute_address" "rethinkdb_static_ip" {
+  name         = "rethinkdb-static-ip"
+  project      = var.project_id
+  region       = var.region
+}
 
 // VM Instance
 resource "google_compute_instance" "rethinkdb_instance" {
@@ -33,7 +42,13 @@ resource "google_compute_instance" "rethinkdb_instance" {
 
   network_interface {
     network = "default"
+    
+    access_config {
+      nat_ip = google_compute_address.rethinkdb_static_ip.address
+    }
   }
+
+  depends_on = [google_compute_address.rethinkdb_static_ip]
 
 }
 

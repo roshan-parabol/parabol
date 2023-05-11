@@ -10,6 +10,10 @@ variable "zone" {
   default = "us-central1-a" // TODO 
 }
 
+variable "disk_size" {
+  default = "10"
+}
+
 variable "create_load_balancer" {
   description = "Flag to indicate whether to create the load balancer"
   default     = true
