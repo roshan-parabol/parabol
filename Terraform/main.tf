@@ -4,14 +4,29 @@ provider "google" {
 }
 
 resource "google_compute_disk" "rethinkdb_storage" {
-  name  = "rethinkdb-storage"
-  type  = "pd-ssd" 
-  size  = var.disk_size
-  zone  = var.zone
+  name = "rethinkdb-storage"
+  type = "pd-ssd"
+  size = var.disk_size
+  zone = var.zone
 
   lifecycle {
     prevent_destroy = true
   }
+}
+
+// VPC Network
+resource "google_compute_network" "rethinkdb_network" {
+  project                 = var.project_id
+  name                    = "rethinkdb-network"
+  auto_create_subnetworks = false
+}
+
+// Sub network
+resource "google_compute_subnetwork" "rethinkdb_subnet" {
+  name          = "rethinkdb-subnet"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = var.region
+  network       = google_compute_network.rethinkdb_network.self_link
 }
 
 // Static IP Address
@@ -19,7 +34,10 @@ resource "google_compute_address" "rethinkdb_static_ip" {
   name         = "rethinkdb-static-ip"
   project      = var.project_id
   region       = var.region
+  address_type = "INTERNAL"
+  subnetwork   = google_compute_subnetwork.rethinkdb_subnet.self_link
 }
+
 
 // VM Instance
 resource "google_compute_instance" "rethinkdb_instance" {
@@ -41,11 +59,8 @@ resource "google_compute_instance" "rethinkdb_instance" {
   }
 
   network_interface {
-    network = "default"
-    
-    access_config {
-      nat_ip = google_compute_address.rethinkdb_static_ip.address
-    }
+    network    = google_compute_network.rethinkdb_network.self_link
+    subnetwork = google_compute_subnetwork.rethinkdb_subnet.self_link
   }
 
   depends_on = [google_compute_address.rethinkdb_static_ip]
