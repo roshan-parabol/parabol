@@ -1,0 +1,48 @@
+---
+- name: Deploy Docker containers to GCP VM
+  hosts: localhost
+  gather_facts: false
+  vars:
+    project_id: parabol-bp-roshan-rathod
+    credentials_file: rethinkdb_vm_service_account.json
+    user: rethinkdb-vm-admin
+    password: parab0l
+
+  tasks:
+    - name: Authenticate with GCP
+      command: gcloud auth activate-service-account --key-file={{ credentials_file }}
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Create rethinkdb directory if it doesn't exist
+      file:
+        path: /home/rethinkdb-vm-admin
+        state: directory
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+      become: true
+      ignore_errors: true
+
+    - name: Copy docker-compose.yaml to VM
+      copy:
+        src: docker-compose.yaml
+        dest: /home/rethinkdb-vm-admin/docker-compose.yaml
+        mode: '0644'
+      become: true
+
+    - name: Copy service account key to VM
+      copy:
+        src: vm_service_account.json
+        dest: /home/rethinkdb-vm-admin/service_account.json
+        mode: '0600'
+      become: true
+
+    - name: Stop and remove existing containers
+      command: docker-compose -f /home/rethinkdb/docker-compose.yaml down
+      become: true
+      ignore_errors: true
+
+    - name: Start Docker containers
+      command: docker-compose -f /home/rethinkdb-vm-admin/docker-compose.yaml up -d
+      become: true

@@ -1,0 +1,44 @@
+version: "3.7"
+
+services:
+  rethinkdb_main:
+    image: rethinkdb:2.4.0
+    command: rethinkdb --bind all --server-tag rethinkdb_main
+    ports:
+      - "8080:8080"
+      - "29015:29015"
+      - "28015:28015"
+    volumes:
+      - rethinkdb-data:/data/rethinkdb
+    networks:
+      - parabol-network
+  rethinkdb_proxy:
+    image: rethinkdb:2.4.0
+    command: rethinkdb --bind all --join rethinkdb_main:29015 --server-tag rethinkdb_proxy --proxy
+    ports:
+      - 8081:8080
+    networks:
+      - parabol-network
+  backup_service:
+    image: rethinkdb:2.4.0
+    volumes:
+      - rethinkdb-backups:/backups
+    command: rethinkdb-dump --connect rethinkdb_main:28015 --file /backups/rethinkdb_backup.tar.gz
+    networks:
+      - parabol-network
+
+networks:
+  parabol-network:
+
+volumes:
+  rethinkdb-data:
+    driver: gcepd
+    driver_opts:
+      size: 10
+      device: projects/${PROJECT_ID}/zones/${ZONE}/disks/${DISK_NAME}
+
+  rethinkdb-backups:
+    driver: gcs
+    driver_opts:
+      bucketname: ${BUCKET_NAME}
+      keyfile: storage-service-account.json
