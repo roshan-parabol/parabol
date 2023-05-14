@@ -29,6 +29,19 @@ resource "google_compute_subnetwork" "rethinkdb_subnet" {
   network       = google_compute_network.rethinkdb_network.self_link
 }
 
+// Firewall Rule
+resource "google_compute_firewall" "iap_firewall" {
+  name    = "iap-tcp-ingress"
+  network = google_compute_network.rethinkdb_network.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["35.235.240.0/20"] //TODO update as required
+}
+
 // Static IP Address
 resource "google_compute_address" "rethinkdb_static_ip" {
   name         = "rethinkdb-static-ip"
