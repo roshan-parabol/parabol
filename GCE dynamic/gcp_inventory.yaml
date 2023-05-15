@@ -1,0 +1,9 @@
+plugin: gcp_compute
+projects:
+  - parabol-bp-roshan-rathod
+auth_kind: serviceaccount
+service_account_file: vm_service_account.json
+hostnames:
+  - name
+compose:
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP
