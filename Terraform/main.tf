@@ -29,7 +29,30 @@ resource "google_compute_subnetwork" "rethinkdb_subnet" {
   network       = google_compute_network.rethinkdb_network.self_link
 }
 
+
+// Create Cloud Router
+resource "google_compute_router" "rethinkdb_router" {
+  name    = "rethinkdb-router"
+  network = google_compute_network.rethinkdb_network.self_link
+  region  = var.region
+}
+
+// Create Cloud NAT
+resource "google_compute_router_nat" "rethinkdb_nat" {
+  name                               = "rethinkdb-nat"
+  router                             = google_compute_router.rethinkdb_router.name
+  region                             = var.region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+}
+
 // Firewall Rule
+// TODO rquired to connect locally, might not need it when we switch to pipelines deploy strategy
 resource "google_compute_firewall" "iap_firewall" {
   name    = "iap-tcp-ingress"
   network = google_compute_network.rethinkdb_network.self_link
@@ -55,14 +78,14 @@ resource "google_compute_address" "rethinkdb_static_ip" {
 // VM Instance
 resource "google_compute_instance" "rethinkdb_instance" {
   name         = "rethinkdb-vm"
-  machine_type = "n1-standard-2" // TODO
+  machine_type = "e2-standard-2" // TODO: decide on machine_type
   zone         = var.zone
   project      = var.project_id
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-11"
-      size  = 20
+      image = "cos-cloud/cos-stable"
+      size  = var.boot_disk_size
     }
   }
 

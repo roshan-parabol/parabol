@@ -6,8 +6,6 @@
     project_id: parabol-bp-roshan-rathod
     credentials_file: rethinkdb_vm_service_account.json
     user: rethinkdb-vm-admin
-    password: parab0l
-
   tasks:
     - name: Create rethinkdb directory if it doesn't exist
       file:
