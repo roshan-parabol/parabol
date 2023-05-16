@@ -5,8 +5,32 @@
   vars:
     project_id: parabol-bp-roshan-rathod
     credentials_file: rethinkdb_vm_service_account.json
-    user: rethinkdb-vm-admin
+    user: ansible
+
   tasks:
+
+    - name: Check if Docker is installed
+      command: docker --version
+      register: docker_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Fail if Docker is not installed
+      fail:
+        msg: "Docker is not installed on the VM."
+      when: docker_check.rc != 0
+
+    - name: Check if Docker Compose is installed
+      command: docker-compose --version
+      register: docker_compose_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Fail if docker-compose is not installed
+      fail:
+        msg: "docker-compose is not installed on the VM."
+      when: docker_compose_check.rc != 0
+
     - name: Create rethinkdb directory if it doesn't exist
       file:
         path: /home/rethinkdb
@@ -26,7 +50,7 @@
 
     - name: Copy service account key to VM
       copy:
-        src: vm_service_account.json
+        src: "{{credentials_file}}"
         dest: /home/rethinkdb/service_account.json
         mode: '0600'
       become: true

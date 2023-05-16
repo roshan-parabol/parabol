@@ -84,7 +84,7 @@ resource "google_compute_instance" "rethinkdb_instance" {
 
   boot_disk {
     initialize_params {
-      image = "cos-cloud/cos-stable"
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
       size  = var.boot_disk_size
     }
   }
