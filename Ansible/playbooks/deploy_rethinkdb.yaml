@@ -41,16 +41,23 @@
       become: true
       ignore_errors: true
 
-    - name: Copy docker-compose.yaml to VM
-      copy:
-        src: docker-compose.yaml
+    - name: Generate Docker Compose file
+      template:
+        src: docker-compose.yaml.j2
         dest: /home/rethinkdb/docker-compose.yaml
         mode: '0644'
       become: true
+      vars:
+        project_id: parabol-bp-roshan-rathod
+        zone: us-central1
+        disk_name: rethinkdb-storage
+        bucket_name: rethinkdb-backup
+        rethinkdb_image: rethinkdb:2.4.0
+        service_account_file: storage_service_account.json
 
     - name: Copy service account key to VM
       copy:
-        src: "{{credentials_file}}"
+        src: "{{ credentials_file }}"
         dest: /home/rethinkdb/service_account.json
         mode: '0600'
       become: true

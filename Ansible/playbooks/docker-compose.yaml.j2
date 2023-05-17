@@ -1,0 +1,20 @@
+version: "3.7"
+
+services:
+  rethinkdb_main:
+    image: {{ rethinkdb_image }}
+    command: rethinkdb --bind all --server-tag rethinkdb_main
+    ports:
+      - "8080:8080"
+      - "29015:29015"
+      - "28015:28015"
+    volumes:
+      - rethinkdb-data:/data/rethinkdb
+    networks:
+      - parabol-network
+
+networks:
+  parabol-network:
+
+volumes:
+  rethinkdb-data:
