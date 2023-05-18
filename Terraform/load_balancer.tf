@@ -51,10 +51,10 @@ resource "google_compute_target_https_proxy" "rethinkdb_https_lb_proxy" {
   project  = var.project_id
   url_map = google_compute_url_map.rethinkdb_compute_url_map.id
   ssl_certificates = [
-    google_compute_managed_ssl_certificate.rethinkdb_ssl_cert.name
+    google_compute_managed_ssl_certificate.rethinkdb_ssl_certificate.name
   ]
   depends_on = [
-    google_compute_managed_ssl_certificate.rethinkdb_ssl_cert
+    google_compute_managed_ssl_certificate.rethinkdb_ssl_certificate
   ]
 }
 
@@ -65,12 +65,12 @@ resource "google_compute_global_forwarding_rule" "rethinkdb_forwarding_rule" {
   ip_address = google_compute_global_address.rethinkdb_lb_ipv4_1.id
 }
 
-resource "google_compute_managed_ssl_certificate" "rethinkdb_ssl_cert" {
+resource "google_compute_managed_ssl_certificate" "rethinkdb_ssl_certificate" {
   provider = google-beta
-  name     = "rethinkdb-ssl-cert"
+  name     = "rethinkdb-ssl-certificate"
   project  = var.project_id
 
   managed {
-    domains = ["randomdomainname-rethinkdb.com"]
+    domains = ["parabol.co"]
   }
 }
