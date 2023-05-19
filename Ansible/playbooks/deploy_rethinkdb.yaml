@@ -62,6 +62,13 @@
         mode: '0600'
       become: true
 
+    - name: Copy certs to VM
+      copy:
+        src: certs
+        dest: /home/rethinkdb/certs
+        mode: '0600'
+      become: true
+
     - name: Stop and remove existing containers
       command: docker-compose -f /home/rethinkdb/docker-compose.yaml down
       become: true
