@@ -3,13 +3,18 @@ version: "3.7"
 services:
   rethinkdb_main:
     image: {{ rethinkdb_image }}
-    command: rethinkdb --bind all --server-tag rethinkdb_main
+    command: rethinkdb --bind all --server-tag rethinkdb_main --http-tls-key /data/certs/key.pem --http-tls-cert /data/certs/cert.pem
     ports:
       - "8080:8080"
       - "29015:29015"
       - "28015:28015"
     volumes:
-      - rethinkdb-data:/data/rethinkdb
+      - type: bind
+        source: certs
+        target: /data
+      - type: volume
+        source: rethinkdb-data
+        target: /data/rethinkdb
     networks:
       - parabol-network
 
